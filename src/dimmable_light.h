@@ -30,7 +30,8 @@
  */
 class DimmableLight {
 public:
-  DimmableLight(int pin) : thyristor(pin), brightness(0) {
+  DimmableLight(int pin, uint8_t minBrightness = 0, uint8_t maxBrightness = 255)
+    : thyristor(pin), brightness(0), mMinBrightness(minBrightness), mMaxBrightness(maxBrightness) {
     if (nLights < N) {
       nLights++;
     } else {
@@ -41,25 +42,77 @@ public:
 
   /**
    * Set the brightness, 0 to turn off the lamp
+   * Maps input 0-255 to hardware minBrightness-maxBrightness range
+   * Input 0 always maps to hardware 0 (off)
+   * Input 1-255 maps linearly to minBrightness-maxBrightness
    */
   void setBrightness(uint8_t bri) {
+    // Store original input value
     brightness = bri;
+
+    // Map to hardware brightness range
+    uint8_t hwBri;
+    if (bri == 0) {
+      hwBri = 0;  // Always off
+    } else if (mMinBrightness == 0 && mMaxBrightness == 255) {
+      hwBri = bri;  // No mapping needed
+    } else {
+      // Map 1-255 to minBrightness-maxBrightness
+      hwBri = mMinBrightness + ((uint16_t)(bri - 1) * (mMaxBrightness - mMinBrightness)) / 254;
+    }
+
 #ifdef NETWORK_FREQ_FIXED_50HZ
-    uint16_t newDelay = 10000 - (uint16_t)(((uint32_t)bri * 10000) / 255);
+    uint16_t newDelay = 10000 - (uint16_t)(((uint32_t)hwBri * 10000) / 255);
 #elif defined(NETWORK_FREQ_FIXED_60HZ)
-    uint16_t newDelay = 8333 - (uint16_t)(((uint32_t)bri * 8333) / 255);
+    uint16_t newDelay = 8333 - (uint16_t)(((uint32_t)hwBri * 8333) / 255);
 #elif defined(NETWORK_FREQ_RUNTIME)
     uint16_t newDelay =
-      Thyristor::getSemiPeriod() - (uint16_t)(((uint32_t)bri * Thyristor::getSemiPeriod()) / 255);
+      Thyristor::getSemiPeriod() - (uint16_t)(((uint32_t)hwBri * Thyristor::getSemiPeriod()) / 255);
 #endif
     thyristor.setDelay(newDelay);
   };
 
   /**
-   * Return the current brightness
+   * Return the current brightness (input scale 0-255).
    */
   uint8_t getBrightness() const {
     return brightness;
+  }
+
+  /**
+   * Get minimum brightness threshold.
+   */
+  uint8_t getMinBrightness() const {
+    return mMinBrightness;
+  }
+
+  /**
+   * Get maximum brightness threshold.
+   */
+  uint8_t getMaxBrightness() const {
+    return mMaxBrightness;
+  }
+
+  /**
+   * Set minimum brightness threshold.
+   */
+  void setMinBrightness(uint8_t minBrightness) {
+    mMinBrightness = minBrightness;
+    // Reapply current brightness with new mapping
+    if (brightness > 0) {
+      setBrightness(brightness);
+    }
+  }
+
+  /**
+   * Set maximum brightness threshold.
+   */
+  void setMaxBrightness(uint8_t maxBrightness) {
+    mMaxBrightness = maxBrightness;
+    // Reapply current brightness with new mapping
+    if (brightness > 0) {
+      setBrightness(brightness);
+    }
   }
 
   /**
@@ -147,10 +200,19 @@ private:
   Thyristor thyristor;
 
   /**
-   * Store the time to wait until turn on the light
-   * 0-->255. That's is 1 unit is approx 40us@50Hz.
+   * Store the current brightness (input scale 0-255).
    */
   uint8_t brightness;
+
+  /**
+   * Minimum brightness threshold (hardware scale).
+   */
+  uint8_t mMinBrightness;
+
+  /**
+   * Maximum brightness threshold (hardware scale).
+   */
+  uint8_t mMaxBrightness;
 };
 
 #endif  // END DIMMABLE_LIGHT_H
