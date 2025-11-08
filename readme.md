@@ -74,7 +74,7 @@ the given value is the relative activation time w.r.t. the semi-period length. T
 
 If you encounter flickering problem due to noise on eletrical network, you can try to enable (uncomment) `#define FILTER_INT_PERIOD` at the begin of `thyristor.cpp` file.
 
-If you have strict memory constrain, you can drop the functionalities provided by `dimmable_light_manager.h/cpp` (i.e. you can delete those files).
+If you have strict memory constraints, use `dimmable_light.h` or `dimmable_light_linearized.h` directly instead of `dimmable_light_manager.h` to avoid STL container overhead (and ArduinoSTL dependency on AVR).
 
 For ready-to-use code look in `examples` folder. For more details check the header files and the [Wiki](https://github.com/bcelary/dimmable-light/wiki).
 
