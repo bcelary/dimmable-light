@@ -1,6 +1,6 @@
 # Dimmable Light for Arduino
 
-[![arduino-library-badge](https://www.ardu-badge.com/badge/Dimmable%20Light%20for%20Arduino.svg?)](https://www.ardu-badge.com/Dimmable%20Light%20for%20Arduino) ![Compile Library Examples](https://github.com/fabianoriccardi/dimmable-light/actions/workflows/LibraryBuild.yml/badge.svg)
+![Compile Library Examples](https://github.com/bcelary/dimmable-light/actions/workflows/LibraryBuild.yml/badge.svg)
 
 A library to manage thyristors (aka dimmer or triac) and phase-fired control (aka phase-cutting control) in Arduino environment.
 
@@ -43,7 +43,7 @@ Here the comparison against 3 similar and popular libraries:
 
 ## Installation
 
-The latest version of Dimmable Light for Arduino is available on Arduino Library Manager and on [PlatformIO registry](https://registry.platformio.org/libraries/fabianoriccardi/Dimmable%20Light%20for%20Arduino).
+The latest version of Dimmable Light for Arduino is available on Arduino Library Manager and on [PlatformIO registry](https://registry.platformio.org/libraries/bcelary/Dimmable%20Light%20for%20Arduino).
 
 On AVR boards such as Arduino/Genuino Uno, you also need [ArduinoSTL](https://github.com/mike-matera/ArduinoSTL) (available on Arduino Library Manager).
 If you want to compile the 6th example (the most complete), you also need [ArduinoSerialCommand](https://github.com/kroimon/Arduino-SerialCommand) library.
@@ -70,13 +70,13 @@ it enables the interrupt on Zero Cross Detection that checks if any thyristor mu
 
     dimmer.setBrightness(150);
 
-the given value is the relative activation time w.r.t. the semi-period length. The method accepts values in range [0; 255].
+the given value is the relative activation time w.r.t. the semi-period length. The method accepts values in range [0; 200].
 
 If you encounter flickering problem due to noise on eletrical network, you can try to enable (uncomment) `#define FILTER_INT_PERIOD` at the begin of `thyristor.cpp` file.
 
 If you have strict memory constrain, you can drop the functionalities provided by `dimmable_light_manager.h/cpp` (i.e. you can delete those files).
 
-For ready-to-use code look in `examples` folder. For more details check the header files and the [Wiki](https://github.com/fabianoriccardi/dimmable-light/wiki).
+For ready-to-use code look in `examples` folder. For more details check the header files and the [Wiki](https://github.com/bcelary/dimmable-light/wiki).
 
 ## Examples
 
