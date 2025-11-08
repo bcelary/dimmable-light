@@ -33,8 +33,11 @@
  */
 class DimmableLightLinearized {
 public:
-  DimmableLightLinearized(int pin, uint8_t minBrightness = 0, uint8_t maxBrightness = 255)
-    : thyristor(pin), brightness(0), mMinBrightness(minBrightness), mMaxBrightness(maxBrightness) {
+  static constexpr uint8_t MAX_BRIGHTNESS = 200;
+  static constexpr uint8_t MAX_MIN_BRIGHTNESS = 55;  // Ensures 200 levels (55-255)
+
+  DimmableLightLinearized(int pin, uint8_t minBrightness = 0)
+    : thyristor(pin), brightness(0), mMinBrightness(minBrightness > MAX_MIN_BRIGHTNESS ? MAX_MIN_BRIGHTNESS : minBrightness) {
     if (nLights < N) {
       nLights++;
     } else {
@@ -45,23 +48,32 @@ public:
 
   /**
    * Set the brightness, 0 to turn off the lamp
-   * Maps input 0-255 to hardware minBrightness-maxBrightness range
+   * Accepts input range 0-MAX_BRIGHTNESS (values >MAX_BRIGHTNESS clamped to MAX_BRIGHTNESS)
+   * Maps to hardware range minBrightness-HW_MAX
    * Input 0 always maps to hardware 0 (off)
-   * Input 1-255 maps linearly to minBrightness-maxBrightness
+   * Input 1-MAX_BRIGHTNESS maps linearly to minBrightness-HW_MAX
    */
   void setBrightness(uint8_t bri) {
-    // Store original input value
+    static constexpr uint8_t HW_MAX = 255;
+
+    // Clamp input to valid range
+    if (bri > MAX_BRIGHTNESS) {
+      bri = MAX_BRIGHTNESS;
+    }
+
+    // Store input value
     brightness = bri;
 
     // Map to hardware brightness range
     uint8_t hwBri;
     if (bri == 0) {
       hwBri = 0;  // Always off
-    } else if (mMinBrightness == 0 && mMaxBrightness == 255) {
-      hwBri = bri;  // No mapping needed
+    } else if (mMinBrightness == 0) {
+      // Map 1-MAX_BRIGHTNESS to 0-HW_MAX (simple scaling)
+      hwBri = ((uint16_t)bri * HW_MAX) / MAX_BRIGHTNESS;
     } else {
-      // Map 1-255 to minBrightness-maxBrightness
-      hwBri = mMinBrightness + ((uint16_t)(bri - 1) * (mMaxBrightness - mMinBrightness)) / 254;
+      // Map 1-MAX_BRIGHTNESS to minBrightness-HW_MAX
+      hwBri = mMinBrightness + ((uint16_t)(bri - 1) * (HW_MAX - mMinBrightness)) / (MAX_BRIGHTNESS - 1);
     }
 
 #ifdef NETWORK_FREQ_FIXED_50HZ
@@ -94,42 +106,28 @@ public:
   };
 
   /**
-   * Return the current brightness (input scale 0-255).
+   * Return the current brightness (input scale 0-MAX_BRIGHTNESS).
    */
   uint8_t getBrightness() const {
     return brightness;
   }
 
   /**
-   * Get minimum brightness threshold.
+   * Get minimum brightness threshold (hardware scale).
    */
   uint8_t getMinBrightness() const {
     return mMinBrightness;
   }
 
   /**
-   * Get maximum brightness threshold.
-   */
-  uint8_t getMaxBrightness() const {
-    return mMaxBrightness;
-  }
-
-  /**
-   * Set minimum brightness threshold.
+   * Set minimum brightness threshold (hardware scale).
+   * Maximum allowed value is MAX_MIN_BRIGHTNESS to preserve precision.
    */
   void setMinBrightness(uint8_t minBrightness) {
-    mMinBrightness = minBrightness;
-    // Reapply current brightness with new mapping
-    if (brightness > 0) {
-      setBrightness(brightness);
+    if (minBrightness > MAX_MIN_BRIGHTNESS) {
+      minBrightness = MAX_MIN_BRIGHTNESS;
     }
-  }
-
-  /**
-   * Set maximum brightness threshold.
-   */
-  void setMaxBrightness(uint8_t maxBrightness) {
-    mMaxBrightness = maxBrightness;
+    mMinBrightness = minBrightness;
     // Reapply current brightness with new mapping
     if (brightness > 0) {
       setBrightness(brightness);
@@ -214,19 +212,14 @@ private:
   Thyristor thyristor;
 
   /**
-   * Store the current brightness (input scale 0-255).
+   * Store the current brightness (input scale 0-MAX_BRIGHTNESS).
    */
   uint8_t brightness;
 
   /**
-   * Minimum brightness threshold (hardware scale).
+   * Minimum brightness threshold (hardware scale 0-HW_MAX).
    */
   uint8_t mMinBrightness;
-
-  /**
-   * Maximum brightness threshold (hardware scale).
-   */
-  uint8_t mMaxBrightness;
 };
 
 #endif  // END DIMMABLE_LIGHT_LINEARIZED_H
