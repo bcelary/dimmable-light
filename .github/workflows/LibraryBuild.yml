@@ -96,7 +96,7 @@ jobs:
 
       - name: Compile all examples using the arduino-test-compile action
         # Specify the git tag, not the Github release
-        uses: ArminJo/arduino-test-compile@v3.2.0
+        uses: ArminJo/arduino-test-compile@v3.4.0
         with:
           arduino-board-fqbn: ${{ matrix.arduino-boards-fqbn }}
           arduino-platform: ${{ matrix.arduino-platform }}
