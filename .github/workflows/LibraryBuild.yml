@@ -14,7 +14,7 @@ jobs:
     name: Compile for ${{ matrix.arduino-platform }}
 
     # Target OS
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     env:
       # Comma separated list without double quotes around the list
@@ -96,7 +96,7 @@ jobs:
 
       - name: Compile all examples using the arduino-test-compile action
         # Specify the git tag, not the Github release
-        uses: ArminJo/arduino-test-compile@v3.2.0
+        uses: ArminJo/arduino-test-compile@v3.4.0
         with:
           arduino-board-fqbn: ${{ matrix.arduino-boards-fqbn }}
           arduino-platform: ${{ matrix.arduino-platform }}
